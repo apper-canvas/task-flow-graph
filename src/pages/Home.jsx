@@ -1,292 +1,145 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import MainFeature from '../components/MainFeature';
-import { toast } from 'react-toastify';
+import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { useSelector } from 'react-redux';
 import { getIcon } from '../utils/iconUtils';
 
 const Home = () => {
-  const [tasks, setTasks] = useState(() => {
-    const savedTasks = localStorage.getItem('tasks');
-    return savedTasks ? JSON.parse(savedTasks) : [];
-  });
-  
-  const [categories, setCategories] = useState(() => {
-    const savedCategories = localStorage.getItem('categories');
-    return savedCategories ? JSON.parse(savedCategories) : [
-      { id: '1', name: 'Work', color: '#818cf8' },
-      { id: '2', name: 'Personal', color: '#fb7185' },
-      { id: '3', name: 'Shopping', color: '#34d399' },
-    ];
-  });
-  
-  const [activeFilter, setActiveFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('dueDate');
-  const [isAscending, setIsAscending] = useState(true);
+  const { isAuthenticated, user } = useSelector(state => state.user);
+  const CheckIcon = getIcon('Check');
+  const ListIcon = getIcon('List');
+  const BellIcon = getIcon('Bell');
+  const CalendarIcon = getIcon('Calendar');
+  const ArrowRightIcon = getIcon('ArrowRight');
 
-  // Save tasks and categories to localStorage
-  useEffect(() => {
-    localStorage.setItem('tasks', JSON.stringify(tasks));
-    localStorage.setItem('categories', JSON.stringify(categories));
-  }, [tasks, categories]);
-
-  // Add new task
-  const addTask = (task) => {
-    const newTask = {
-      ...task,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-    };
-    setTasks(prevTasks => [...prevTasks, newTask]);
-    toast.success('Task added successfully!');
-  };
-
-  // Delete task
-  const deleteTask = (id) => {
-    setTasks(prevTasks => prevTasks.filter(task => task.id !== id));
-    toast.success('Task deleted successfully!');
-  };
-  
-  // Toggle task completion
-  const toggleTaskCompletion = (id) => {
-    setTasks(prevTasks => 
-      prevTasks.map(task => 
-        task.id === id 
-          ? { 
-              ...task, 
-              isCompleted: !task.isCompleted,
-              completedAt: !task.isCompleted ? new Date().toISOString() : null
-            } 
-          : task
-      )
-    );
-  };
-
-  // Update task
-  const updateTask = (updatedTask) => {
-    setTasks(prevTasks => 
-      prevTasks.map(task => 
-        task.id === updatedTask.id ? updatedTask : task
-      )
-    );
-    toast.success('Task updated successfully!');
-  };
-
-  // Add new category
-  const addCategory = (category) => {
-    const newCategory = {
-      ...category,
-      id: crypto.randomUUID(),
-    };
-    setCategories(prevCategories => [...prevCategories, newCategory]);
-    toast.success('Category added successfully!');
-  };
-
-  // Filter tasks
-  const getFilteredTasks = () => {
-    let filteredTasks = [...tasks];
-    
-    // Apply category filter
-    if (activeFilter !== 'all' && activeFilter !== 'completed') {
-      filteredTasks = filteredTasks.filter(task => task.categoryId === activeFilter);
-    } else if (activeFilter === 'completed') {
-      filteredTasks = filteredTasks.filter(task => task.isCompleted);
+  // Features for the landing page
+  const features = [
+    {
+      icon: ListIcon,
+      title: 'Organize Tasks',
+      description: 'Easily create, categorize, and prioritize your tasks to stay organized.'
+    },
+    {
+      icon: CheckIcon,
+      title: 'Track Progress',
+      description: 'Mark tasks as complete and track your productivity over time.'
+    },
+    {
+      icon: BellIcon,
+      title: 'Due Dates & Reminders',
+      description: 'Set due dates for your tasks and never miss a deadline.'
+    },
+    {
+      icon: CalendarIcon,
+      title: 'Calendar Integration',
+      description: 'See your tasks in a calendar view to plan your week efficiently.'
     }
-    
-    // Apply sorting
-    filteredTasks.sort((a, b) => {
-      if (sortBy === 'title') {
-        return isAscending 
-          ? a.title.localeCompare(b.title) 
-          : b.title.localeCompare(a.title);
-      } else if (sortBy === 'priority') {
-        const priorityOrder = { high: 0, medium: 1, low: 2 };
-        return isAscending 
-          ? priorityOrder[a.priority] - priorityOrder[b.priority] 
-          : priorityOrder[b.priority] - priorityOrder[a.priority];
-      } else if (sortBy === 'dueDate') {
-        // Handle null due dates
-        if (!a.dueDate) return isAscending ? 1 : -1;
-        if (!b.dueDate) return isAscending ? -1 : 1;
-        
-        return isAscending 
-          ? new Date(a.dueDate) - new Date(b.dueDate) 
-          : new Date(b.dueDate) - new Date(a.dueDate);
-      }
-      return 0;
-    });
-    
-    return filteredTasks;
-  };
-
-  // Get Icon components
-  const ListIcon = getIcon('ListTodo');
-  const CheckCircleIcon = getIcon('CheckCircle2');
-  const ArrowUpDown = getIcon('ArrowUpDown');
-
+  ];
+  
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8">
-        <div className="md:col-span-1">
-          <div className="sticky top-24 space-y-8">
-            {/* Category Filter Navigation */}
-            <motion.nav 
-              className="card p-4"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-                <ListIcon className="w-5 h-5 text-primary" /> 
-                <span>Filters</span>
-              </h2>
-              
-              <ul className="space-y-2">
-                <li>
-                  <button
-                    onClick={() => setActiveFilter('all')}
-                    className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                      activeFilter === 'all'
-                        ? 'bg-primary/10 text-primary font-medium'
-                        : 'hover:bg-surface-100 dark:hover:bg-surface-700'
-                    }`}
-                  >
-                    All Tasks
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => setActiveFilter('completed')}
-                    className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                      activeFilter === 'completed'
-                        ? 'bg-primary/10 text-primary font-medium'
-                        : 'hover:bg-surface-100 dark:hover:bg-surface-700'
-                    }`}
-                  >
-                    <span className="flex items-center gap-2">
-                      <CheckCircleIcon className="w-4 h-4" />
-                      Completed
-                    </span>
-                  </button>
-                </li>
-                
-                <li className="mt-4">
-                  <h3 className="text-sm font-medium text-surface-500 dark:text-surface-400 px-3 mb-2">
-                    Categories
-                  </h3>
-                  <ul className="space-y-1">
-                    {categories.map(category => (
-                      <li key={category.id}>
-                        <button
-                          onClick={() => setActiveFilter(category.id)}
-                          className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center gap-2 ${
-                            activeFilter === category.id
-                              ? 'bg-primary/10 text-primary font-medium'
-                              : 'hover:bg-surface-100 dark:hover:bg-surface-700'
-                          }`}
-                        >
-                          <span 
-                            className="w-3 h-3 rounded-full" 
-                            style={{ backgroundColor: category.color }}
-                          />
-                          {category.name}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </li>
-              </ul>
-            </motion.nav>
+    <div className="min-h-screen">
+      <div className="container mx-auto px-4 py-16">
+        {/* Hero Section */}
+        <div className="flex flex-col items-center text-center mb-16">
+          <motion.h1 
+            className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 text-surface-800 dark:text-surface-100"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            Manage Your Tasks <span className="text-primary">Efficiently</span>
+          </motion.h1>
+          <motion.p 
+            className="text-lg md:text-xl text-surface-600 dark:text-surface-300 max-w-3xl mb-10"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            TaskFlow helps you organize your tasks, track your progress, and boost your productivity.
+            Simple, intuitive, and designed for your workflow.
+          </motion.p>
+          
+          <motion.div
+            className="flex flex-col sm:flex-row gap-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+          >
+            <Link to={isAuthenticated ? "/dashboard" : "/login"} className="btn-primary flex items-center justify-center gap-2">
+              {isAuthenticated ? 'Go to Dashboard' : 'Get Started'} 
+              <ArrowRightIcon className="w-5 h-5" />
+            </Link>
             
-            {/* Statistics */}
-            <motion.div 
-              className="card p-4"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <h2 className="text-lg font-bold mb-4">Statistics</h2>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-surface-600 dark:text-surface-400">Total Tasks</span>
-                  <span className="font-medium">{tasks.length}</span>
+            {!isAuthenticated && (
+              <Link to="/signup" className="btn-outline">
+                Create Free Account
+              </Link>
+            )}
+          </motion.div>
+        </div>
+        
+        {/* Features Section */}
+        <div className="mb-20">
+          <h2 className="text-3xl font-bold text-center mb-12 text-surface-800 dark:text-surface-100">
+            Why Use TaskFlow?
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {features.map((feature, index) => (
+              <motion.div
+                key={index}
+                className="card p-6 flex flex-col items-center text-center"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 + index * 0.1 }}
+              >
+                <div className="p-3 rounded-full bg-primary/10 mb-4">
+                  <feature.icon className="w-6 h-6 text-primary" />
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-surface-600 dark:text-surface-400">Completed</span>
-                  <span className="font-medium">
-                    {tasks.filter(task => task.isCompleted).length}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-surface-600 dark:text-surface-400">Pending</span>
-                  <span className="font-medium">
-                    {tasks.filter(task => !task.isCompleted).length}
-                  </span>
-                </div>
-                
-                {tasks.length > 0 && (
-                  <div className="mt-4">
-                    <div className="h-2 bg-surface-200 dark:bg-surface-700 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-primary rounded-full"
-                        style={{ 
-                          width: `${Math.round((tasks.filter(task => task.isCompleted).length / tasks.length) * 100)}%` 
-                        }}
-                      />
-                    </div>
-                    <div className="text-xs text-surface-500 dark:text-surface-400 mt-1 text-right">
-                      {Math.round((tasks.filter(task => task.isCompleted).length / tasks.length) * 100)}% complete
-                    </div>
-                  </div>
-                )}
-              </div>
-            </motion.div>
+                <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
+                <p className="text-surface-600 dark:text-surface-400">{feature.description}</p>
+              </motion.div>
+            ))}
           </div>
         </div>
         
-        <div className="md:col-span-2 lg:col-span-3 space-y-6">
-          {/* Sorting Controls */}
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-            <h1 className="text-2xl font-bold">
-              {activeFilter === 'all' && 'All Tasks'}
-              {activeFilter === 'completed' && 'Completed Tasks'}
-              {activeFilter !== 'all' && activeFilter !== 'completed' && 
-                categories.find(c => c.id === activeFilter)?.name + ' Tasks'}
-            </h1>
-            
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-surface-600 dark:text-surface-400">Sort by:</label>
-              <select 
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="input !py-1 !px-3 text-sm min-w-[120px]"
-              >
-                <option value="dueDate">Due Date</option>
-                <option value="priority">Priority</option>
-                <option value="title">Title</option>
-              </select>
-              
-              <button
-                onClick={() => setIsAscending(prev => !prev)}
-                className="p-2 rounded-lg bg-surface-100 dark:bg-surface-800 hover:bg-surface-200 dark:hover:bg-surface-700"
-                title={isAscending ? "Sort descending" : "Sort ascending"}
-              >
-                <ArrowUpDown className={`w-4 h-4 transition-transform ${!isAscending ? 'rotate-180' : ''}`} />
-              </button>
-            </div>
+        {/* CTA Section */}
+        <motion.div 
+          className="card p-8 md:p-12 text-center mt-8"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, delay: 0.6 }}
+        >
+          <h2 className="text-2xl md:text-3xl font-bold mb-4">Ready to Get Organized?</h2>
+          <p className="text-surface-600 dark:text-surface-400 mb-8 max-w-2xl mx-auto">
+            Join thousands of users who have transformed their productivity with TaskFlow. 
+            Start managing your tasks more effectively today.
+          </p>
+          <div className="flex flex-col sm:flex-row justify-center gap-4">
+            <Link to={isAuthenticated ? "/dashboard" : "/signup"} className="btn-primary">
+              {isAuthenticated ? 'Go to Dashboard' : 'Create Free Account'}
+            </Link>
+            {!isAuthenticated && (
+              <Link to="/login" className="btn-outline">
+                Sign In
+              </Link>
+            )}
           </div>
-          
-          {/* Main Task Management Feature */}
-          <MainFeature 
-            tasks={getFilteredTasks()}
-            categories={categories}
-            onAddTask={addTask}
-            onDeleteTask={deleteTask}
-            onToggleTaskCompletion={toggleTaskCompletion}
-            onUpdateTask={updateTask}
-            onAddCategory={addCategory}
-          />
-        </div>
+        </motion.div>
       </div>
+      
+      {/* Footer */}
+      <footer className="mt-20 py-6 border-t border-surface-200 dark:border-surface-700">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="text-primary font-bold mb-4 md:mb-0">
+              TaskFlow
+            </div>
+            <p className="text-surface-500 dark:text-surface-400 text-sm">
+              &copy; {new Date().getFullYear()} TaskFlow. All rights reserved.
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

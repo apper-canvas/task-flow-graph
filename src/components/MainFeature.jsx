@@ -20,7 +20,7 @@ const MainFeature = ({
     description: '',
     dueDate: '',
     priority: 'medium',
-    categoryId: categories.length > 0 ? categories[0].id : '',
+    categoryId: categories.length > 0 ? categories[0].Id : '',
     isCompleted: false
   });
   const [showAddCategory, setShowAddCategory] = useState(false);
@@ -89,7 +89,7 @@ const MainFeature = ({
       description: '',
       dueDate: '',
       priority: 'medium',
-      categoryId: categories.length > 0 ? categories[0].id : '',
+      categoryId: categories.length > 0 ? categories[0].Id : '',
       isCompleted: false
     });
   };
@@ -102,8 +102,13 @@ const MainFeature = ({
   const handleEditTask = (task) => {
     setShowForm(true);
     setEditingTask(task);
+
+    // Convert category ID to proper format
+    const categoryId = task.category || '';
+
     setFormData({
       ...task,
+      categoryId,
       dueDate: task.dueDate ? new Date(task.dueDate).toISOString().substr(0, 10) : ''
     });
   };
@@ -120,11 +125,12 @@ const MainFeature = ({
       ...formData,
       title: formData.title.trim(),
       description: formData.description.trim(),
+      category: formData.categoryId, // Use the proper field name for the backend
       dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : null
     };
     
     if (editingTask) {
-      onUpdateTask({ ...taskToSave, id: editingTask.id, createdAt: editingTask.createdAt });
+      onUpdateTask({ ...taskToSave, Id: editingTask.Id });
     } else {
       onAddTask(taskToSave);
     }
@@ -136,7 +142,7 @@ const MainFeature = ({
       description: '',
       dueDate: '',
       priority: 'medium',
-      categoryId: categories.length > 0 ? categories[0].id : '',
+      categoryId: categories.length > 0 ? categories[0].Id : '',
       isCompleted: false
     });
   };
@@ -184,7 +190,7 @@ const MainFeature = ({
 
   // Get category by id
   const getCategoryById = (id) => {
-    return categories.find(category => category.id === id) || null;
+    return categories.find(category => category.Id === id) || null;
   };
 
   // Get Icon components
@@ -311,8 +317,8 @@ const MainFeature = ({
                   className="input"
                 >
                   {categories.map(category => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
+                    <option key={category.Id} value={category.Id}>
+                      {category.Name}
                     </option>
                   ))}
                 </select>
@@ -491,7 +497,7 @@ const MainFeature = ({
           ) : (
             tasks.map(task => (
               <motion.div
-                key={task.id}
+                key={task.Id}
                 layout
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -505,7 +511,7 @@ const MainFeature = ({
                 <div className="p-4 sm:p-5 flex flex-col sm:flex-row gap-4">
                   <div className="flex-shrink-0 flex items-start pt-1">
                     <button
-                      onClick={() => onToggleTaskCompletion(task.id)}
+                      onClick={() => onToggleTaskCompletion(task.Id)}
                       className={`w-6 h-6 rounded-full flex items-center justify-center border-2 transition-colors ${
                         task.isCompleted
                           ? 'bg-primary border-primary text-white'
@@ -541,19 +547,19 @@ const MainFeature = ({
                         </span>
                         
                         {/* Category Badge */}
-                        {task.categoryId && getCategoryById(task.categoryId) && (
+                        {task.category && getCategoryById(task.category) && (
                           <span 
                             className="category-pill inline-flex items-center gap-1"
                             style={{ 
-                              backgroundColor: `${getCategoryById(task.categoryId).color}20`,
-                              color: getCategoryById(task.categoryId).color
+                              backgroundColor: `${getCategoryById(task.category).color}20`,
+                              color: getCategoryById(task.category).color
                             }}
                           >
                             <span 
                               className="w-2 h-2 rounded-full" 
-                              style={{ backgroundColor: getCategoryById(task.categoryId).color }}
+                              style={{ backgroundColor: getCategoryById(task.category).color }}
                             />
-                            {getCategoryById(task.categoryId).name}
+                            {getCategoryById(task.category).Name}
                           </span>
                         )}
                         
@@ -597,7 +603,7 @@ const MainFeature = ({
                       </button>
                       
                       <button
-                        onClick={() => onDeleteTask(task.id)}
+                        onClick={() => onDeleteTask(task.Id)}
                         className="btn-outline !py-1 !px-3 text-sm flex items-center gap-1 text-red-500 hover:text-red-600 border-red-200 dark:border-red-900/30 hover:bg-red-50 dark:hover:bg-red-900/20"
                       >
                         <TrashIcon className="w-4 h-4" />
